@@ -157,7 +157,7 @@ public class Jogo{
             }
             else if(qualNavio <= 4){
                 navioAtual = new Navio(2);
-                System.out.println("X Ou X" + amarelaLetra + "X" + resetaCor + " X");
+                System.out.println("X Ou X " + amarelaLetra + "X" + resetaCor + " X");
                 System.out.println(amarelaLetra + "X" + resetaCor + "\nX");
             }
             else{
