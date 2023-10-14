@@ -388,7 +388,7 @@ public class Jogo{
     }
 }
 
-private class Mapa{
+class Mapa{
     private char[][] matriz;
     private int numLinhas, numColunas;
     private char[] codigoMapa; //Ocean, Hit, Fail, Navy
@@ -729,7 +729,7 @@ private class Mapa{
     }
 }
 
-private class Navio{
+class Navio{
     private int tamanho;
     private String nome;
 
@@ -777,7 +777,7 @@ private class Navio{
     }
 }
 
-private class Jogador{
+class Jogador{
     private String nome, comemoracao;
     private int acertos;
 
