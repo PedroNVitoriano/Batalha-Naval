@@ -13,6 +13,7 @@ public class Jogo{
     public static final String vermelhoLetra = "\u001B[31m";
     public static final String azulLetra = "\u001B[34m";
     public static final String verdeLetra = "\u001B[32m";
+    public static final String roxoLetra = "\u001B[35m";
     
     Jogo(Jogador p1, Mapa mapa1, Jogador p2, Mapa mapa2, int navios){
         this.setPlayer1(p1);
@@ -80,39 +81,28 @@ public class Jogo{
         this.transicaoJogo("BATALHA NAVAL", 3);
     }
 
-    public void inicializaPerfis(){
+    public void inicializaPerfis(int numJogador, Jogador player){
         String nome, comemora;
         Scanner ler = new Scanner(System.in);
 
-        this.transicaoJogador("Passe para o Jogador 1");
+        this.transicaoJogador("Passe para o Jogador " + numJogador);
         this.limpaTela();
-        System.out.println("Qual o seu nome?");
+        System.out.println("Qual o seu nome? (Sem acentos)");
         nome = ler.nextLine();
 
         System.out.println("Seja bem vindo " + nome + "!\nSe voce ganhar, o que voce quer dizer?");
         comemora = ler.nextLine();
 
-        this.getPlayer1().setNome(nome);
-        this.getPlayer1().setComemoracao(comemora);
-
-        this.transicaoJogador("Passe para o Jogador 2");
-        this.limpaTela();
-        System.out.println("Qual o seu nome?");
-        nome = ler.nextLine();
-
-        System.out.println("Seja bem vindo " + nome + "!\nSe voce ganhar, o que voce quer dizer?");
-        comemora = ler.nextLine();
-
-        this.getPlayer2().setNome(nome);
-        this.getPlayer2().setComemoracao(comemora);
+        player.setNome(nome);
+        player.setComemoracao(comemora);
     }
 
     public void inicializarMapas(){
         boolean initOk1, initOk2;
 
         this.transicaoJogo("Inicializando os mapas...", 3);
-        initOk1 = this.inicializaMapaJogador(this.getPlayer1(), this.getMapaP1());
-        initOk2 = this.inicializaMapaJogador(this.getPlayer2(), this.getMapaP2());
+        initOk1 = this.inicializaMapaJogador(this.getPlayer1(), this.getMapaP1(), 1);
+        initOk2 = this.inicializaMapaJogador(this.getPlayer2(), this.getMapaP2(), 2);
 
         this.setMapasInicializados(initOk1 && initOk2);
 
@@ -124,13 +114,15 @@ public class Jogo{
         }
     }
 
-    private boolean inicializaMapaJogador(Jogador player, Mapa mapa){
+    private boolean inicializaMapaJogador(Jogador player, Mapa mapa, int x){
         Scanner ler = new Scanner(System.in);
         int contNavio, linha, coluna, quantosFaltam, qualNavio;
         Navio navioAtual;
         boolean atingiuLimite;
 
-        this.transicaoJogador("Hora de " + player.getNome() + " colocar seus " + this.getNumNavios() + " navios!");
+        this.inicializaPerfis(x, player);
+
+        this.transicaoJogo("Hora de " + player.getNome() + " colocar seus " + this.getNumNavios() + " navios!", 3);
 
         qualNavio = 0;
         quantosFaltam = this.getNumNavios();
@@ -166,6 +158,8 @@ public class Jogo{
                 System.out.println("X");
             }
 
+            System.out.println();
+            System.out.println("Escreva primeiro a " + amarelaLetra + "LINHA" + resetaCor + " depois pressione enter\ne espere para escrever a " + amarelaLetra +  "COLUNA" + resetaCor);
             System.out.println();
             System.out.println("O navio que voce vai colocar agora eh um " + navioAtual.getNome() + " (" + navioAtual.getTamanho() + " posicoes)");
 
@@ -209,15 +203,42 @@ public class Jogo{
     }
 
     private int leituraValida(Scanner scan, int lowLimit, int highLimit){
-        int entrada;
-        entrada = scan.nextInt();
+        int inteiro;
+        String entrada;
+        entrada = scan.nextLine();
+        inteiro = 0;
 
-        while((entrada < lowLimit) || (entrada > highLimit)){
-            System.out.print("Numero Invalido... digite novamente: ");
-            entrada = scan.nextInt();
+        if(entrada == ""){
+            System.out.print("Parece que voce nao digitou um valor valido... digite novamente: ");
+            inteiro = this.leituraValida(scan, lowLimit, highLimit);
+        }
+        else if(this.ehInt(entrada)){
+            inteiro = Integer.parseInt(entrada);
+            if((inteiro < lowLimit) || (inteiro > highLimit)){
+                System.out.print("Numero Invalido... digite novamente: ");
+                inteiro = this.leituraValida(scan, lowLimit, highLimit);
+            }
+        }
+        else{
+            if(!this.ehInt(entrada)){
+                System.out.print("Parece que voce nao digitou um valor valido... digite novamente: ");
+                inteiro = this.leituraValida(scan, lowLimit, highLimit);
+            }
         }
 
-        return entrada;
+        return inteiro;
+    }
+
+    private boolean ehInt(String entrada){
+        boolean inteiro = true;
+
+        for(int i = 0; (i < entrada.length()) && inteiro; i++){
+            if(!Character.isDigit(entrada.charAt(i)) || (entrada.charAt(i) == ',') || (entrada.charAt(i) == '.')){
+                inteiro = false;
+            }
+        }
+
+        return inteiro;
     }
 
     public void iniciaBatalha(){
@@ -243,7 +264,7 @@ public class Jogo{
     }
 
     private boolean executarJogada(Jogador player, Mapa mapaPlayer, Jogador inimigo, Mapa mapaInimigo){
-        boolean statusJogo, acertou;
+        boolean statusJogo, acertou, valido;
         int linha, coluna;
         String message;
         Scanner ler = new Scanner(System.in);
@@ -256,13 +277,15 @@ public class Jogo{
             System.out.println(amarelaLetra + mapaPlayer.getCodigoMapa(3) + resetaCor + " - Seus Navios!");
             System.out.println(vermelhoLetra + mapaPlayer.getCodigoMapa(2) + resetaCor + " - Tiro Errado!");
             System.out.println(azulLetra + mapaPlayer.getCodigoMapa(1) + resetaCor + " - Tiro Acertado!");
+            System.out.println(roxoLetra + mapaPlayer.getCodigoMapa(1) + resetaCor + " ou " + roxoLetra + mapaPlayer.getCodigoMapa(2) + resetaCor + " - Movimento Inimigo mais recente!");
             System.out.println();
             System.out.print("Digite a coordenada da linha:");
             linha = this.leituraValida(ler, 0, mapaInimigo.getLinha() - 1);
             System.out.print("Digite a coordenada da coluna:");
             coluna = this.leituraValida(ler, 0, mapaInimigo.getLinha() - 1);
             acertou = mapaInimigo.tiro(linha, coluna);
-            if(acertou){
+            valido = mapaInimigo.getTiroValido();
+            if(acertou && valido){
                 player.incrementaAcertos();
 
                 if(player.getAcertos() >= 25){
@@ -381,7 +404,6 @@ public class Jogo{
         jogo1 = new Jogo(player1, mapa1, player2, mapa2, 8);
 
         jogo1.abertura();
-        jogo1.inicializaPerfis();
         jogo1.inicializarMapas();
         jogo1.iniciaBatalha();
         jogo1.imprimeResultado();
@@ -389,13 +411,16 @@ public class Jogo{
 }
 
 class Mapa{
+    private boolean tiroValido;
     private char[][] matriz;
     private int numLinhas, numColunas;
     private char[] codigoMapa; //Ocean, Hit, Fail, Navy
+    private int ultimoMovimento[] = new int[2];
     public static final String resetaCor = "\u001B[0m";
     public static final String amarelaLetra = "\u001B[33m";
     public static final String vermelhoLetra = "\u001B[31m";
     public static final String azulLetra = "\u001B[34m";
+    public static final String roxoLetra = "\u001B[35m";
 
     Mapa(){
         this.setLinha(10);
@@ -407,6 +432,14 @@ class Mapa{
         this.setCodigoMapa(2, 'E');
         this.setCodigoMapa(3, 'X');
         this.inicializar(this.getCodigoMapa(0));
+    }
+
+    public boolean getTiroValido(){
+        return this.tiroValido;
+    }
+
+    public void setTiroValido(boolean novoEstado){
+        this.tiroValido = novoEstado;
     }
 
     //elemento da matriz
@@ -485,10 +518,20 @@ class Mapa{
                 }
 
                 if(valor == this.getCodigoMapa(1)){
-                    System.out.print(" " + azulLetra + valor + resetaCor);
+                    if(contLinhas == ultimoMovimento[0] && contColunas == ultimoMovimento[1]){
+                        System.out.print(" " + roxoLetra + valor + resetaCor);
+                    }
+                    else{
+                        System.out.print(" " + azulLetra + valor + resetaCor);
+                    }
                 }
                 else if(valor == this.getCodigoMapa(2)){
-                    System.out.print(" " + vermelhoLetra + valor + resetaCor);
+                    if(contLinhas == ultimoMovimento[0] && contColunas == ultimoMovimento[1]){
+                        System.out.print(" " + roxoLetra + valor + resetaCor);
+                    }
+                    else{
+                        System.out.print(" " + vermelhoLetra + valor + resetaCor);
+                    }
                 }
                 else if(valor == this.getCodigoMapa(3)){
                     System.out.print(" " + amarelaLetra + valor + resetaCor);
@@ -508,20 +551,29 @@ class Mapa{
         String message;
         acertou = true;
         valorPos = this.getElemento(linha, coluna);
+
         if(valorPos == this.getCodigoMapa(0)){
             message = "---- Errou! -------";
             this.setElemento(linha, coluna, this.getCodigoMapa(2));
+            setTiroValido(true);
             acertou = false;
+            ultimoMovimento[0] = linha;
+            ultimoMovimento[1] = coluna;
         }
         else if(valorPos == this.getCodigoMapa(1)){
             message = "---- Posicao Repetida - Acerto Anterior -------";
+            setTiroValido(false);
         }
         else if(valorPos == this.getCodigoMapa(2)){
             message = "---- Posicao Repetida - Agua Anterior -------";
+            setTiroValido(false);
         }
         else{
             message = "--- Acertou um Navio! ---";
+            setTiroValido(true);
             this.setElemento(linha, coluna, this.getCodigoMapa(1));
+            ultimoMovimento[0] = linha;
+            ultimoMovimento[1] = coluna;
         }
 
         System.out.println(message);
@@ -708,15 +760,42 @@ class Mapa{
     }
 
     private int leituraValida(Scanner scan, int lowLimit, int highLimit){
-        int entrada;
-        entrada = scan.nextInt();
+        int inteiro;
+        String entrada;
+        entrada = scan.nextLine();
+        inteiro = 0;
 
-        while((entrada < lowLimit) || (entrada > highLimit)){
-            System.out.print("Numero Invalido... digite novamente: ");
-            entrada = scan.nextInt();
+        if(entrada == ""){
+            System.out.print("Parece que voce nao digitou um valor valido... digite novamente: ");
+            inteiro = this.leituraValida(scan, lowLimit, highLimit);
+        }
+        else if(this.ehInt(entrada)){
+            inteiro = Integer.parseInt(entrada);
+            if((inteiro < lowLimit) || (inteiro > highLimit)){
+                System.out.print("Numero Invalido... digite novamente: ");
+                inteiro = this.leituraValida(scan, lowLimit, highLimit);
+            }
+        }
+        else{
+            if(!this.ehInt(entrada)){
+                System.out.print("Parece que voce nao digitou um valor valido... digite novamente: ");
+                inteiro = this.leituraValida(scan, lowLimit, highLimit);
+            }
         }
 
-        return entrada;
+        return inteiro;
+    }
+
+    private boolean ehInt(String entrada){
+        boolean inteiro = true;
+
+        for(int i = 0; (i < entrada.length()) && inteiro; i++){
+            if(!Character.isDigit(entrada.charAt(i)) || (entrada.charAt(i) == ',') || (entrada.charAt(i) == '.')){
+                inteiro = false;
+            }
+        }
+
+        return inteiro;
     }
 
     private void limpaTela(){
